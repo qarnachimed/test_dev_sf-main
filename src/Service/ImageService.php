@@ -1,62 +1,47 @@
 <?php
 
-namespace App\Controller;
+namespace App\Service;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use App\Helper\ArrayHelper;
 
-class Home extends AbstractController
+class ImageService
 {
     private $httpClient;
+    private $apiKey;
+    private $apiUrl;
+    private $rssUrl;
 
-    public function __construct(HttpClientInterface $httpClient)
+    public function __construct(HttpClientInterface $httpClient, string $apiKey, string $apiUrl, string $rssUrl)
     {
         $this->httpClient = $httpClient;
+        $this->apiKey = $apiKey;
+        $this->apiUrl = $apiUrl;
+        $this->rssUrl = $rssUrl;
     }
 
-    /**
-     * @Route("/", name="homepage")
-     * @param Request $request
-     * @return Response
-     */
-    public function __invoke(Request $request): Response
-    {
-        $images = $this->getImages();
-
-        return $this->render('default/index.html.twig', [
-            'images' => $images,
-        ]);
-    }
-
-    private function getImages(): array
+    public function getImages(): array
     {
         $rssImages = $this->getRssImages();
         $apiImages = $this->getApiImages();
 
-        $images = array_merge($rssImages, $apiImages);
+        $images = ArrayHelper::mergeUnique($rssImages, $apiImages);
 
-        $uniqueImages = array_unique($images);
-
-        return $uniqueImages;
+        return $images;
     }
 
     private function getRssImages(): array
     {
-        $rssUrl = 'http://www.commitstrip.com/en/feed/';
+        $rssUrl = $this->rssUrl;
 
         try {
-
             $response = $this->httpClient->request('GET', $rssUrl);
             $xml = $response->getContent();
             $items = simplexml_load_string($xml)->channel->item;
             $images = [];
             foreach ($items as $item) {
-
                 $image = $this->getImageFromRssItem($item);
-                if (!empty($image)) {
+                if (isset($image)) {
                     $images[] = $image;
                 }
             }
@@ -71,13 +56,13 @@ class Home extends AbstractController
     {
         $content = (string) $item->children('content', true)->encoded;
         $doc = new \DomDocument();
-        @$doc->loadHTML('<?xml encoding="utf-8" ?>'.$content);
+        @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $content);
 
         $xpath = new \DomXpath($doc);
 
         $imageNodes = $xpath->query('//img');
 
-        if ($imageNodes->length > 0) {
+        if (0 < $imageNodes->length) {
             $image = $imageNodes[0]->getAttribute('src');
             return $image;
         } else {
@@ -87,19 +72,14 @@ class Home extends AbstractController
 
     private function getApiImages(): array
     {
-        $apiKey = 'YOUR_NEWSAPI_KEY';
-        $apiUrl = "https://newsapi.org/v2/top-headlines?country=us&apiKey=$apiKey";
+        $apiUrl = $this->apiUrl;
 
         try {
-            $apiUrl = urlencode($apiUrl);
             $response = $this->httpClient->request('GET', $apiUrl);
-            $json = $response->getContent();
-
-            $data = json_decode($json);
-
+            $data = json_decode($response->getContent());
             $images = [];
             foreach ($data->articles as $article) {
-                if (!empty($article->urlToImage)) {
+                if (isset($article->urlToImage)) {
                     $images[] = $article->urlToImage;
                 }
             }
@@ -109,5 +89,4 @@ class Home extends AbstractController
             throw $e;
         }
     }
-
 }

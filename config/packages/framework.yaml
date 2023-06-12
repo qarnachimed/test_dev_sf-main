@@ -1,5 +1,11 @@
 # see https://symfony.com/doc/current/reference/configuration/framework.html
+parameters:
+    api_key: '%env(API_KEY)%'
+    api_url: '%env(API_URL)%'
+    rss_url: '%env(RSS_URL)%'
+
 framework:
+
     secret: '%env(APP_SECRET)%'
     #csrf_protection: true
     #http_method_override: true
