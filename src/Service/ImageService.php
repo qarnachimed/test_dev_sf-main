@@ -2,42 +2,47 @@
 
 namespace App\Service;
 
-use Symfony\Contracts\HttpClient\HttpClientInterface;
-use App\Helper\ArrayHelper;
+use DomDocument;
+use DomXpath;
+use Exception;
 
 class ImageService
 {
 
-
-    public function __construct()
+    public function getRssImages(string $data): array
     {
-    }
+        $images = [];
 
-    public function getImages(HttpClientInterface $httpClient, string $apiUrl, string $rssUrl): array
-    {
-        $rssImages = $this->getRssImages($httpClient, $rssUrl);
-        $apiImages = $this->getApiImages($httpClient, $apiUrl);
-
-        $images = ArrayHelper::mergeUnique($rssImages, $apiImages);
-
-        return $images;
-    }
-
-    private function getRssImages($httpClient, $rssUrl): array
-    {
         try {
-            $response = $httpClient->request('GET', $rssUrl);
-            $xml = $response->getContent();
-            $items = simplexml_load_string($xml)->channel->item;
-            $images = [];
+            $items = simplexml_load_string($data)->channel->item;
             foreach ($items as $item) {
                 $image = $this->getImageFromRssItem($item);
-                if (isset($image)) {
+                if (!is_null($image)) {
                     $images[] = $image;
                 }
             }
             return $images;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
+
+    public function getApiImages(string $data): array
+    {
+        $images = [];
+
+        try {
+            $data = json_decode($data, false);
+
+            foreach ($data->articles as $article) {
+                if (!is_null($article->urlToImage)) {
+                    $images[] = $article->urlToImage;
+                }
+            }
+
+            return $images;
+        } catch (Exception $e) {
             throw $e;
         }
     }
@@ -45,36 +50,18 @@ class ImageService
     private function getImageFromRssItem($item): ?string
     {
         $content = (string) $item->children('content', true)->encoded;
-        $doc = new \DomDocument();
+
+        $doc = new DomDocument();
         @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $content);
 
-        $xpath = new \DomXpath($doc);
+        $xpath = new DomXpath($doc);
 
         $imageNodes = $xpath->query('//img');
 
-        if (0 < $imageNodes->length) {
-            $image = $imageNodes[0]->getAttribute('src');
-            return $image;
-        } else {
+        if (0 === $imageNodes->length) {
             return null;
         }
-    }
 
-    private function getApiImages($httpClient, $apiUrl): array
-    {
-        try {
-            $response = $httpClient->request('GET', $apiUrl);
-            $data = json_decode($response->getContent());
-            $images = [];
-            foreach ($data->articles as $article) {
-                if (isset($article->urlToImage)) {
-                    $images[] = $article->urlToImage;
-                }
-            }
-
-            return $images;
-        } catch (\Exception $e) {
-            throw $e;
-        }
+        return $imageNodes[0]->getAttribute('src');
     }
 }
