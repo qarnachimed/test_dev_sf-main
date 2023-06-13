@@ -7,14 +7,25 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+
 
 class HomeController extends AbstractController
 {
     private $imageService;
+    private $httpClient;
+    private $apiKey;
+    private $apiUrl;
+    private $rssUrl;
 
-    public function __construct(ImageService $imageService)
+    public function __construct(ImageService $imageService, HttpClientInterface $httpClient, string $apiKey, string $apiUrl, string $rssUrl)
     {
         $this->imageService = $imageService;
+        $this->httpClient = $httpClient;
+        $this->apiKey = $apiKey;
+        $this->apiUrl = $apiUrl;
+        $this->rssUrl = $rssUrl;
     }
 
     /**
@@ -24,7 +35,10 @@ class HomeController extends AbstractController
      */
     public function __invoke(Request $request): Response
     {
-        $images = $this->imageService->getImages();
+        $httpClient = $this->httpClient;
+        $apiUrl = $this->apiUrl;
+        $rssUrl = $this->rssUrl;
+        $images = $this->imageService->getImages($httpClient, $apiUrl, $rssUrl);
 
         return $this->render('default/index.html.twig', [
             'images' => $images,

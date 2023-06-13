@@ -7,35 +7,26 @@ use App\Helper\ArrayHelper;
 
 class ImageService
 {
-    private $httpClient;
-    private $apiKey;
-    private $apiUrl;
-    private $rssUrl;
 
-    public function __construct(HttpClientInterface $httpClient, string $apiKey, string $apiUrl, string $rssUrl)
+
+    public function __construct()
     {
-        $this->httpClient = $httpClient;
-        $this->apiKey = $apiKey;
-        $this->apiUrl = $apiUrl;
-        $this->rssUrl = $rssUrl;
     }
 
-    public function getImages(): array
+    public function getImages(HttpClientInterface $httpClient, string $apiUrl, string $rssUrl): array
     {
-        $rssImages = $this->getRssImages();
-        $apiImages = $this->getApiImages();
+        $rssImages = $this->getRssImages($httpClient, $rssUrl);
+        $apiImages = $this->getApiImages($httpClient, $apiUrl);
 
         $images = ArrayHelper::mergeUnique($rssImages, $apiImages);
 
         return $images;
     }
 
-    private function getRssImages(): array
+    private function getRssImages($httpClient, $rssUrl): array
     {
-        $rssUrl = $this->rssUrl;
-
         try {
-            $response = $this->httpClient->request('GET', $rssUrl);
+            $response = $httpClient->request('GET', $rssUrl);
             $xml = $response->getContent();
             $items = simplexml_load_string($xml)->channel->item;
             $images = [];
@@ -45,7 +36,6 @@ class ImageService
                     $images[] = $image;
                 }
             }
-
             return $images;
         } catch (\Exception $e) {
             throw $e;
@@ -70,12 +60,10 @@ class ImageService
         }
     }
 
-    private function getApiImages(): array
+    private function getApiImages($httpClient, $apiUrl): array
     {
-        $apiUrl = $this->apiUrl;
-
         try {
-            $response = $this->httpClient->request('GET', $apiUrl);
+            $response = $httpClient->request('GET', $apiUrl);
             $data = json_decode($response->getContent());
             $images = [];
             foreach ($data->articles as $article) {
