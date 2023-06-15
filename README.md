@@ -21,9 +21,9 @@ Questions théoriques :
 
 1- Pour améliorer les temps de réponse du script, on peut mettre en place les actions suivantes :
 
-      A - Caching : Utilisez un système de mise en cache pour les données fréquemment utilisées, comme les réponses des requêtes HTTP. Cela évite de refaire les mêmes   requêtes à chaque exécution du script.
-      B - Utilisez des requêtes HTTP parallèles : Si nous récupérons des données à partir de plusieurs sources, effectuez les requêtes HTTP en parallèle plutôt que séquentiellement. Cela permet d'économiser du temps en récupérant simultanément les données à partir de différentes sources.
-      C - Optimisez les opérations de traitement des données : Analysez le code pour identifier les boucles ou les opérations coûteuses et cherchez des moyens de les optimiser. On peut utiliser des algorithmes plus efficaces ou réduisez les opérations redondantes pour améliorer les performances globales du script.
+      A - Caching : On peut utiliser un système de mise en cache pour les données fréquemment utilisées, comme les réponses des requêtes HTTP. Cela évite de refaire les mêmes   requêtes à chaque exécution du script.
+      B - Utilisation des requêtes HTTP parallèles : Si nous récupérons des données à partir de plusieurs sources, effectuez les requêtes HTTP en parallèle plutôt que séquentiellement. Cela permet d'économiser du temps en récupérant simultanément les données à partir de différentes sources.
+      C - Optimisation les opérations de traitement des données : On peut analyser le code pour identifier les boucles ou les opérations coûteuses et cherchez des moyens de les optimiser. On peut utiliser des algorithmes plus efficaces ou réduisez les opérations redondantes pour améliorer les performances globales du script.
 
 2- Pour rendre le script scalable pour gérer plusieurs milliers de sources et d'images, on peut envisager les actions suivantes :
 
